@@ -1,4 +1,5 @@
-import { AppData, SubKegiatan, Personil, MakanMinumData } from '../types';
+import { SubKegiatan, Personil, MakanMinum } from '../types';
+import { AppData } from '../store';
 
 const SHEET_NAME = 'KasFlow Data';
 
@@ -59,12 +60,12 @@ async function initHeaders(accessToken: string, spreadsheetId: string) {
       values: [['ID', 'Nama', 'Anggaran Murni PD', 'Anggaran Perubahan PD', 'Anggaran Murni MM', 'Anggaran Perubahan MM']]
     },
     {
-      range: 'PerjalananDinas!A1:G1',
-      values: [['ID', 'Sub Kegiatan ID', 'Tanggal Berangkat', 'Tanggal Kembali', 'Tujuan', 'Total', 'Personil (JSON)']]
+      range: 'PerjalananDinas!A1:H1',
+      values: [['ID', 'Sub Kegiatan ID', 'Judul', 'Wilayah', 'Tanggal', 'Total', 'Personil (JSON)', 'Created At']]
     },
     {
-      range: 'MakanMinum!A1:G1',
-      values: [['ID', 'Sub Kegiatan ID', 'Tanggal', 'Keterangan', 'Jenis Pesanan', 'Jumlah Pesanan', 'Total']]
+      range: 'MakanMinum!A1:H1',
+      values: [['ID', 'Sub Kegiatan ID', 'Judul', 'Tanggal', 'Qty Snack', 'Qty Makan', 'Total', 'Created At']]
     }
   ];
 
@@ -82,7 +83,7 @@ async function initHeaders(accessToken: string, spreadsheetId: string) {
 }
 
 export async function loadDataFromSheets(accessToken: string, spreadsheetId: string): Promise<AppData> {
-  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?ranges=SubKegiatan!A2:F&ranges=PerjalananDinas!A2:G&ranges=MakanMinum!A2:G`, {
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?ranges=SubKegiatan!A2:F&ranges=PerjalananDinas!A2:H&ranges=MakanMinum!A2:H`, {
     headers: { Authorization: `Bearer ${accessToken}` }
   });
   const data = await res.json();
@@ -105,21 +106,23 @@ export async function loadDataFromSheets(accessToken: string, spreadsheetId: str
   const perjalananDinas = pdRows.map((row: any) => ({
     id: row[0],
     subKegiatanId: row[1],
-    tanggalBerangkat: row[2],
-    tanggalKembali: row[3],
-    tujuan: row[4],
+    judul: row[2] || '',
+    wilayah: row[3] || '',
+    tanggal: row[4] || '',
     total: Number(row[5]) || 0,
-    personil: row[6] ? JSON.parse(row[6]) : []
+    personil: row[6] ? JSON.parse(row[6]) : [],
+    createdAt: Number(row[7]) || Date.now()
   }));
 
   const makanMinum = mmRows.map((row: any) => ({
     id: row[0],
     subKegiatanId: row[1],
-    tanggal: row[2],
-    keterangan: row[3],
-    jenisPesanan: row[4],
-    jumlahPesanan: Number(row[5]) || 0,
-    total: Number(row[6]) || 0
+    judul: row[2] || '',
+    tanggal: row[3] || '',
+    qtySnack: Number(row[4]) || 0,
+    qtyMakan: Number(row[5]) || 0,
+    total: Number(row[6]) || 0,
+    createdAt: Number(row[7]) || Date.now()
   }));
 
   return { subKegiatan, perjalananDinas, makanMinum };
@@ -134,7 +137,7 @@ export async function saveDataToSheets(accessToken: string, spreadsheetId: strin
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      ranges: ['SubKegiatan!A2:F', 'PerjalananDinas!A2:G', 'MakanMinum!A2:G']
+      ranges: ['SubKegiatan!A2:F', 'PerjalananDinas!A2:H', 'MakanMinum!A2:H']
     })
   });
 
@@ -143,17 +146,17 @@ export async function saveDataToSheets(accessToken: string, spreadsheetId: strin
   ]);
 
   const pdValues = data.perjalananDinas.map(pd => [
-    pd.id, pd.subKegiatanId, pd.tanggalBerangkat, pd.tanggalKembali, pd.tujuan, pd.total, JSON.stringify(pd.personil)
+    pd.id, pd.subKegiatanId, pd.judul, pd.wilayah, pd.tanggal, pd.total, JSON.stringify(pd.personil), pd.createdAt
   ]);
 
   const mmValues = data.makanMinum.map(mm => [
-    mm.id, mm.subKegiatanId, mm.tanggal, mm.keterangan, mm.jenisPesanan, mm.jumlahPesanan, mm.total
+    mm.id, mm.subKegiatanId, mm.judul, mm.tanggal, mm.qtySnack, mm.qtyMakan, mm.total, mm.createdAt
   ]);
 
   const updateData = [];
   if (skValues.length > 0) updateData.push({ range: 'SubKegiatan!A2:F', values: skValues });
-  if (pdValues.length > 0) updateData.push({ range: 'PerjalananDinas!A2:G', values: pdValues });
-  if (mmValues.length > 0) updateData.push({ range: 'MakanMinum!A2:G', values: mmValues });
+  if (pdValues.length > 0) updateData.push({ range: 'PerjalananDinas!A2:H', values: pdValues });
+  if (mmValues.length > 0) updateData.push({ range: 'MakanMinum!A2:H', values: mmValues });
 
   if (updateData.length === 0) return; // Nothing to save
 

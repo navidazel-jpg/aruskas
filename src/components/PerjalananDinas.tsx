@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { useStore, formatRupiah, formatNumberInput, parseNumberInput } from '../store';
+import { useStore, formatRupiah, formatNumberInput, parseNumberInput, formatDateSafe } from '../store';
 import { Plus, Trash2, UserPlus, X } from 'lucide-react';
-import { format } from 'date-fns';
 import { Personil } from '../types';
 
 export function PerjalananDinas() {
@@ -235,7 +234,7 @@ export function PerjalananDinas() {
                   const subKegiatan = data.subKegiatan.find(sk => sk.id === item.subKegiatanId);
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">{format(new Date(item.tanggal), 'dd MMM yyyy')}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{formatDateSafe(item.tanggal)}</td>
                       <td className="px-6 py-4">
                         <div className="font-medium text-slate-800">{item.judul}</div>
                         <div className="text-xs text-slate-500 mt-0.5">Tujuan: {item.wilayah}</div>

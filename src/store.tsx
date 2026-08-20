@@ -218,3 +218,12 @@ export function parseNumberInput(value: string | number) {
   return numberString ? parseInt(numberString, 10) : 0;
 }
 
+import { format } from 'date-fns';
+
+export function formatDateSafe(dateStr: string | undefined | null) {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '-';
+  return format(d, 'dd MMM yyyy');
+}
+
