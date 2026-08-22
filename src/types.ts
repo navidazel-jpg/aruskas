@@ -1,3 +1,9 @@
+export type AppUser = {
+  id: string;
+  nama: string;
+  jabatan: string;
+};
+
 export type SubKegiatan = {
   id: string;
   nama: string;

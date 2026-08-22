@@ -1,9 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { SubKegiatan, PerjalananDinas, MakanMinum } from './types';
+import { SubKegiatan, PerjalananDinas, MakanMinum, AppUser } from './types';
 import { loadDataFromSheets, saveDataToSheets, getOrCreateSpreadsheet } from './lib/sheets';
 import { getAccessToken } from './lib/auth';
 
 const STORAGE_KEY = 'monitoring_keuangan_data';
+const USER_STORAGE_KEY = 'mak_current_user';
+const USERS_LIST_KEY = 'mak_registered_users';
+
+const defaultUsers: AppUser[] = [
+  { id: '1', nama: 'Navi Dazel', jabatan: 'Bendahara Pengeluaran' },
+  { id: '2', nama: 'Staf Pengelola Kas', jabatan: 'Operator Keuangan' },
+  { id: '3', nama: 'PPTK Diskominfo', jabatan: 'Pejabat Pelaksana Teknis' },
+];
 
 export type AppData = {
   subKegiatan: SubKegiatan[];
@@ -22,6 +30,12 @@ type StoreContextType = {
   isLoading: boolean;
   isSaving: boolean;
   spreadsheetId: string | null;
+  currentUser: AppUser | null;
+  registeredUsers: AppUser[];
+  loginAsUser: (nama: string, jabatan?: string) => void;
+  logoutUser: () => void;
+  addRegisteredUser: (nama: string, jabatan: string) => void;
+  deleteRegisteredUser: (id: string) => void;
   addSubKegiatan: (item: Omit<SubKegiatan, 'id'>) => void;
   updateSubKegiatan: (id: string, updates: Partial<SubKegiatan>) => void;
   deleteSubKegiatan: (id: string) => void;
@@ -39,9 +53,73 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData>(defaultData);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
+
+  const [registeredUsers, setRegisteredUsers] = useState<AppUser[]>(() => {
+    const saved = localStorage.getItem(USERS_LIST_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return defaultUsers;
+      }
+    }
+    return defaultUsers;
+  });
+
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
+    const saved = localStorage.getItem(USER_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(USERS_LIST_KEY, JSON.stringify(registeredUsers));
+  }, [registeredUsers]);
+
+  const loginAsUser = (nama: string, jabatan: string = 'Staf Keuangan') => {
+    const existing = registeredUsers.find(u => u.nama.toLowerCase() === nama.trim().toLowerCase());
+    const userToSet: AppUser = existing || {
+      id: crypto.randomUUID(),
+      nama: nama.trim(),
+      jabatan: jabatan.trim() || 'Staf Keuangan',
+    };
+
+    if (!existing) {
+      setRegisteredUsers(prev => [...prev, userToSet]);
+    }
+    setCurrentUser(userToSet);
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userToSet));
+  };
+
+  const logoutUser = () => {
+    setCurrentUser(null);
+    localStorage.removeItem(USER_STORAGE_KEY);
+  };
+
+  const addRegisteredUser = (nama: string, jabatan: string) => {
+    const newUser: AppUser = {
+      id: crypto.randomUUID(),
+      nama: nama.trim(),
+      jabatan: jabatan.trim() || 'Staf',
+    };
+    setRegisteredUsers(prev => [...prev, newUser]);
+  };
+
+  const deleteRegisteredUser = (id: string) => {
+    setRegisteredUsers(prev => prev.filter(u => u.id !== id));
+    if (currentUser?.id === id) {
+      logoutUser();
+    }
+  };
 
   // Sync state changes to local storage immediately
   useEffect(() => {
@@ -187,7 +265,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <StoreContext.Provider value={{
-      data, isLoading, isSaving, spreadsheetId, addSubKegiatan, updateSubKegiatan, deleteSubKegiatan,
+      data, isLoading, isSaving, spreadsheetId,
+      currentUser, registeredUsers, loginAsUser, logoutUser, addRegisteredUser, deleteRegisteredUser,
+      addSubKegiatan, updateSubKegiatan, deleteSubKegiatan,
       addPerjalananDinas, updatePerjalananDinas, addMakanMinum, updateMakanMinum, deletePerjalananDinas, deleteMakanMinum, syncToSheets, initializeSheets
     }}>
       {children}
