@@ -1,11 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAppContext } from '../store/AppContext';
 import { formatRupiah } from '../utils/formatters';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { Plane, Coffee, Briefcase } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
+import { Plane, Coffee, Briefcase, BarChart2, PieChart as PieChartIcon, Activity } from 'lucide-react';
 
 export const Dashboard = () => {
   const { subKegiatans, pdTransactions, mmTransactions } = useAppContext();
+  const [chartType, setChartType] = useState<'pie' | 'bar' | 'line'>('pie');
   
   // Computations for Global Chart
 
@@ -175,31 +176,104 @@ export const Dashboard = () => {
 
       {/* Global Chart Section */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col">
-        <h3 className="font-bold text-slate-800 mb-6">Rasio Penyerapan Anggaran Keseluruhan</h3>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+          <h3 className="font-bold text-slate-800">Rasio Penyerapan Anggaran Keseluruhan</h3>
+          
+          <div className="flex bg-slate-100 p-1 rounded-lg self-start sm:self-auto">
+            <button 
+              onClick={() => setChartType('pie')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${chartType === 'pie' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <PieChartIcon size={14} /> Pie
+            </button>
+            <button 
+              onClick={() => setChartType('bar')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${chartType === 'bar' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <BarChart2 size={14} /> Bar
+            </button>
+            <button 
+              onClick={() => setChartType('line')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${chartType === 'line' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <Activity size={14} /> Line
+            </button>
+          </div>
+        </div>
+
         <div className="h-80 w-full relative">
           {chartData.filter(d => d.value > 0).length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData.filter(d => d.value > 0)}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={100}
-                  outerRadius={130}
-                  paddingAngle={2}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  formatter={(value: number) => formatRupiah(value)}
-                  contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} 
-                />
-                <Legend verticalAlign="bottom" height={36} iconType="circle" />
-              </PieChart>
+              {chartType === 'pie' ? (
+                <PieChart>
+                  <Pie
+                    data={chartData.filter(d => d.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={90}
+                    outerRadius={120}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value: number) => formatRupiah(value)}
+                    contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} 
+                  />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                </PieChart>
+              ) : chartType === 'bar' ? (
+                <BarChart data={chartData.filter(d => d.value > 0)} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748b', fontSize: 12 }} 
+                    tickFormatter={(val) => {
+                      if (val >= 1000000000) return `Rp${(val / 1000000000).toFixed(1)}M`;
+                      if (val >= 1000000) return `Rp${(val / 1000000).toFixed(1)}Jt`;
+                      return `Rp${val}`;
+                    }}
+                    dx={-10}
+                  />
+                  <Tooltip 
+                    formatter={(value: number) => formatRupiah(value)}
+                    contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} 
+                    cursor={{ fill: '#f8fafc' }}
+                  />
+                  <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={60}>
+                    {chartData.filter(d => d.value > 0).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              ) : (
+                <LineChart data={chartData.filter(d => d.value > 0)} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748b', fontSize: 12 }} 
+                    tickFormatter={(val) => {
+                      if (val >= 1000000000) return `Rp${(val / 1000000000).toFixed(1)}M`;
+                      if (val >= 1000000) return `Rp${(val / 1000000).toFixed(1)}Jt`;
+                      return `Rp${val}`;
+                    }}
+                    dx={-10}
+                  />
+                  <Tooltip 
+                    formatter={(value: number) => formatRupiah(value)}
+                    contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} 
+                  />
+                  <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} dot={{ r: 6, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 8 }} />
+                </LineChart>
+              )}
             </ResponsiveContainer>
           ) : (
              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">

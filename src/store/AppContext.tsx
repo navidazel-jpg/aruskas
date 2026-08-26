@@ -9,6 +9,7 @@ export type SubKegiatan = {
   anggaranMurniMM: number;
   anggaranPerubahanMM: number;
   userId?: string;
+  tahun?: number;
 };
 
 export type Personil = {
@@ -26,6 +27,7 @@ export type PDTransaction = {
   personil: Personil[];
   total: number;
   userId?: string;
+  tahun?: number;
 };
 
 export type MMTransaction = {
@@ -40,6 +42,7 @@ export type MMTransaction = {
   pph: number;
   grandTotal: number;
   userId?: string;
+  tahun?: number;
 };
 
 type AppState = {
@@ -61,6 +64,8 @@ type AppState = {
   isSyncing: boolean;
   manualSync: () => Promise<void>;
   isFirebaseReady: boolean;
+  selectedYear: number;
+  setSelectedYear: (year: number) => void;
 };
 
 const initialState: AppState = {
@@ -82,14 +87,24 @@ const initialState: AppState = {
   isSyncing: false,
   manualSync: async () => {},
   isFirebaseReady: true,
+  selectedYear: 2026,
+  setSelectedYear: () => {}
 };
 
 const AppContext = createContext<AppState>(initialState);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [subKegiatans, setSubKegiatans] = useState<SubKegiatan[]>([]);
-  const [pdTransactions, setPdTransactions] = useState<PDTransaction[]>([]);
-  const [mmTransactions, setMmTransactions] = useState<MMTransaction[]>([]);
+  const [allSubKegiatans, setAllSubKegiatans] = useState<SubKegiatan[]>([]);
+  const [allPdTransactions, setAllPdTransactions] = useState<PDTransaction[]>([]);
+  const [allMmTransactions, setAllMmTransactions] = useState<MMTransaction[]>([]);
+  
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear() === 2026 ? 2026 : 2026); // Default 2026
+  
+  // Derived state based on selected year. If a record lacks 'tahun', assume it belongs to 2026.
+  const subKegiatans = allSubKegiatans.filter(sk => (sk.tahun || 2026) === selectedYear);
+  const pdTransactions = allPdTransactions.filter(pd => (pd.tahun || 2026) === selectedYear);
+  const mmTransactions = allMmTransactions.filter(mm => (mm.tahun || 2026) === selectedYear);
+
   const HARDCODED_GAS_URL = "https://script.google.com/macros/s/AKfycbw4U-jbwpBbZHA0AlZzMw5rJy5REtu0BIjGMf88X7ViPt8NgfOiRE5N7xU-JrUp9CPY/exec";
   const [gasUrl, setGasUrlState] = useState<string>(HARDCODED_GAS_URL);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -104,9 +119,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setIsSyncing(true);
     try {
       const data = await fetchFromGAS(gasUrl);
-      setSubKegiatans(data.subKegiatans || []);
-      setPdTransactions(data.pdTransactions || []);
-      setMmTransactions(data.mmTransactions || []);
+      setAllSubKegiatans(data.subKegiatans || []);
+      setAllPdTransactions(data.pdTransactions || []);
+      setAllMmTransactions(data.mmTransactions || []);
     } catch (err) {
       console.error(err);
       alert('Gagal mengambil data dari Google Sheets. Pastikan URL Web App valid dan sudah diset ke "Execute as me, access to anyone".');
@@ -138,53 +153,59 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // -- CRUD SUB KEGIATAN --
   const addSubKegiatan = (item: SubKegiatan) => {
-    const newData = [...subKegiatans, item];
-    setSubKegiatans(newData);
-    saveToGAS(newData, pdTransactions, mmTransactions);
+    const newItem = { ...item, tahun: item.tahun || selectedYear };
+    const newData = [...allSubKegiatans, newItem];
+    setAllSubKegiatans(newData);
+    saveToGAS(newData, allPdTransactions, allMmTransactions);
   };
   const editSubKegiatan = (id: string, item: SubKegiatan) => {
-    const newData = subKegiatans.map(sk => sk.id === id ? item : sk);
-    setSubKegiatans(newData);
-    saveToGAS(newData, pdTransactions, mmTransactions);
+    const newItem = { ...item, tahun: item.tahun || selectedYear };
+    const newData = allSubKegiatans.map(sk => sk.id === id ? newItem : sk);
+    setAllSubKegiatans(newData);
+    saveToGAS(newData, allPdTransactions, allMmTransactions);
   };
   const deleteSubKegiatan = (id: string) => {
-    const newData = subKegiatans.filter(sk => sk.id !== id);
-    setSubKegiatans(newData);
-    saveToGAS(newData, pdTransactions, mmTransactions);
+    const newData = allSubKegiatans.filter(sk => sk.id !== id);
+    setAllSubKegiatans(newData);
+    saveToGAS(newData, allPdTransactions, allMmTransactions);
   };
   
   // -- CRUD PD TRANSACTIONS --
   const addPDTransaction = (item: PDTransaction) => {
-    const newData = [...pdTransactions, item];
-    setPdTransactions(newData);
-    saveToGAS(subKegiatans, newData, mmTransactions);
+    const newItem = { ...item, tahun: selectedYear };
+    const newData = [...allPdTransactions, newItem];
+    setAllPdTransactions(newData);
+    saveToGAS(allSubKegiatans, newData, allMmTransactions);
   };
   const editPDTransaction = (id: string, item: PDTransaction) => {
-    const newData = pdTransactions.map(tx => tx.id === id ? item : tx);
-    setPdTransactions(newData);
-    saveToGAS(subKegiatans, newData, mmTransactions);
+    const newItem = { ...item, tahun: item.tahun || selectedYear };
+    const newData = allPdTransactions.map(tx => tx.id === id ? newItem : tx);
+    setAllPdTransactions(newData);
+    saveToGAS(allSubKegiatans, newData, allMmTransactions);
   };
   const deletePDTransaction = (id: string) => {
-    const newData = pdTransactions.filter(tx => tx.id !== id);
-    setPdTransactions(newData);
-    saveToGAS(subKegiatans, newData, mmTransactions);
+    const newData = allPdTransactions.filter(tx => tx.id !== id);
+    setAllPdTransactions(newData);
+    saveToGAS(allSubKegiatans, newData, allMmTransactions);
   };
 
   // -- CRUD MM TRANSACTIONS --
   const addMMTransaction = (item: MMTransaction) => {
-    const newData = [...mmTransactions, item];
-    setMmTransactions(newData);
-    saveToGAS(subKegiatans, pdTransactions, newData);
+    const newItem = { ...item, tahun: selectedYear };
+    const newData = [...allMmTransactions, newItem];
+    setAllMmTransactions(newData);
+    saveToGAS(allSubKegiatans, allPdTransactions, newData);
   };
   const editMMTransaction = (id: string, item: MMTransaction) => {
-    const newData = mmTransactions.map(tx => tx.id === id ? item : tx);
-    setMmTransactions(newData);
-    saveToGAS(subKegiatans, pdTransactions, newData);
+    const newItem = { ...item, tahun: item.tahun || selectedYear };
+    const newData = allMmTransactions.map(tx => tx.id === id ? newItem : tx);
+    setAllMmTransactions(newData);
+    saveToGAS(allSubKegiatans, allPdTransactions, newData);
   };
   const deleteMMTransaction = (id: string) => {
-    const newData = mmTransactions.filter(tx => tx.id !== id);
-    setMmTransactions(newData);
-    saveToGAS(subKegiatans, pdTransactions, newData);
+    const newData = allMmTransactions.filter(tx => tx.id !== id);
+    setAllMmTransactions(newData);
+    saveToGAS(allSubKegiatans, allPdTransactions, newData);
   };
 
   return (
@@ -193,7 +214,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addSubKegiatan, editSubKegiatan, deleteSubKegiatan,
       addPDTransaction, editPDTransaction, deletePDTransaction,
       addMMTransaction, editMMTransaction, deleteMMTransaction,
-      gasUrl, setGasUrl, isSyncing, manualSync, isFirebaseReady
+      gasUrl, setGasUrl, isSyncing, manualSync, isFirebaseReady,
+      selectedYear, setSelectedYear
     }}>
       {children}
     </AppContext.Provider>

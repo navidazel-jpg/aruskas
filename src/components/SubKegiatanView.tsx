@@ -4,18 +4,25 @@ import { formatRupiah, parseRupiah } from '../utils/formatters';
 import { PlusCircle, Wallet, Plane, Coffee, Pencil, Trash2, X } from 'lucide-react';
 
 export const SubKegiatanView = () => {
-  const { subKegiatans, addSubKegiatan, editSubKegiatan, deleteSubKegiatan, pdTransactions, mmTransactions } = useAppContext();
+  const { subKegiatans, addSubKegiatan, editSubKegiatan, deleteSubKegiatan, pdTransactions, mmTransactions, selectedYear } = useAppContext();
   
   const [nama, setNama] = useState('');
+  const [tahun, setTahun] = useState(selectedYear);
   const [murniPD, setMurniPD] = useState('');
   const [perubahanPD, setPerubahanPD] = useState('');
   const [murniMM, setMurniMM] = useState('');
   const [perubahanMM, setPerubahanMM] = useState('');
 
+  // Update form year when context year changes
+  React.useEffect(() => {
+    setTahun(selectedYear);
+  }, [selectedYear]);
+
   // Modals state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editId, setEditId] = useState('');
   const [editNama, setEditNama] = useState('');
+  const [editTahun, setEditTahun] = useState(selectedYear);
   const [editMurniPD, setEditMurniPD] = useState('');
   const [editPerubahanPD, setEditPerubahanPD] = useState('');
   const [editMurniMM, setEditMurniMM] = useState('');
@@ -28,6 +35,7 @@ export const SubKegiatanView = () => {
   const handleOpenEdit = (item: SubKegiatan) => {
     setEditId(item.id);
     setEditNama(item.nama);
+    setEditTahun(item.tahun || selectedYear);
     setEditMurniPD(item.anggaranMurniPD ? formatRupiah(item.anggaranMurniPD) : '');
     setEditPerubahanPD(item.anggaranPerubahanPD ? formatRupiah(item.anggaranPerubahanPD) : '');
     setEditMurniMM(item.anggaranMurniMM ? formatRupiah(item.anggaranMurniMM) : '');
@@ -42,6 +50,7 @@ export const SubKegiatanView = () => {
     editSubKegiatan(editId, {
       id: editId,
       nama: editNama,
+      tahun: editTahun,
       anggaranMurniPD: parseRupiah(editMurniPD),
       anggaranPerubahanPD: parseRupiah(editPerubahanPD),
       anggaranMurniMM: parseRupiah(editMurniMM),
@@ -74,6 +83,7 @@ export const SubKegiatanView = () => {
     addSubKegiatan({
       id: Date.now().toString(),
       nama,
+      tahun,
       anggaranMurniPD: parseRupiah(murniPD),
       anggaranPerubahanPD: parseRupiah(perubahanPD),
       anggaranMurniMM: parseRupiah(murniMM),
@@ -81,6 +91,7 @@ export const SubKegiatanView = () => {
     });
     
     setNama('');
+    setTahun(selectedYear);
     setMurniPD('');
     setPerubahanPD('');
     setMurniMM('');
@@ -119,16 +130,30 @@ export const SubKegiatanView = () => {
           <PlusCircle className="text-blue-500" size={20} /> Tambah Sub Kegiatan Baru
         </h3>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Nama Sub Kegiatan</label>
-            <input 
-              type="text" 
-              required
-              value={nama}
-              onChange={e => setNama(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors bg-slate-50 focus:bg-white"
-              placeholder="Contoh: Rapat Koordinasi Tahunan"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="md:col-span-3">
+              <label className="block text-sm font-medium text-slate-700 mb-2">Nama Sub Kegiatan</label>
+              <input 
+                type="text" 
+                required
+                value={nama}
+                onChange={e => setNama(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors bg-slate-50 focus:bg-white"
+                placeholder="Contoh: Rapat Koordinasi Tahunan"
+              />
+            </div>
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-slate-700 mb-2">Tahun</label>
+              <select 
+                value={tahun}
+                onChange={e => setTahun(Number(e.target.value))}
+                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors bg-slate-50 focus:bg-white"
+              >
+                {[2026, 2027, 2028, 2029, 2030, 2031].map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -273,15 +298,29 @@ export const SubKegiatanView = () => {
             </div>
             <div className="p-6 overflow-y-auto">
               <form id="edit-form" onSubmit={handleEditSubmit} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Nama Sub Kegiatan</label>
-                  <input 
-                    type="text" 
-                    required
-                    value={editNama}
-                    onChange={e => setEditNama(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors bg-slate-50 focus:bg-white"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="md:col-span-3">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Nama Sub Kegiatan</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={editNama}
+                      onChange={e => setEditNama(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors bg-slate-50 focus:bg-white"
+                    />
+                  </div>
+                  <div className="md:col-span-1">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Tahun</label>
+                    <select 
+                      value={editTahun}
+                      onChange={e => setEditTahun(Number(e.target.value))}
+                      className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors bg-slate-50 focus:bg-white"
+                    >
+                      {[2026, 2027, 2028, 2029, 2030, 2031].map(y => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
