@@ -12,7 +12,7 @@ export const MMView = () => {
   const [qtySnack, setQtySnack] = useState('');
   const [qtyNasi, setQtyNasi] = useState('');
   
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [selectedHistoryGroup, setSelectedHistoryGroup] = useState<string | null>(null);
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -160,13 +160,6 @@ export const MMView = () => {
     return groups;
   }, [mmTransactions]);
 
-  const toggleGroup = (id: string) => {
-    setExpandedGroups(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
-
   return (
     <div className="space-y-8">
       {/* Form Card */}
@@ -308,17 +301,16 @@ export const MMView = () => {
           ) : (
             Object.entries(groupedTransactions).map(([subKegiatanId, txs]) => {
               const subKegiatan = subKegiatans.find(sk => String(sk.id) === String(subKegiatanId));
-              const isExpanded = !!expandedGroups[subKegiatanId];
               const groupTotal = txs.reduce((sum, tx) => sum + tx.grandTotal, 0);
 
               return (
                 <div key={subKegiatanId} className="bg-white">
                   <button 
-                    onClick={() => toggleGroup(subKegiatanId)}
+                    onClick={() => setSelectedHistoryGroup(subKegiatanId)}
                     className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors focus:outline-none"
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`p-1 rounded-full transition-transform ${isExpanded ? 'rotate-90 bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                      <div className="p-1 rounded-full transition-transform bg-slate-100 text-slate-400">
                         <ChevronRight size={18} />
                       </div>
                       <div className="text-left">
@@ -330,56 +322,84 @@ export const MMView = () => {
                       {formatRupiah(groupTotal)}
                     </div>
                   </button>
-                  
-                  {isExpanded && (
-                    <div className="bg-slate-50 border-t border-slate-100 px-6 py-4">
-                      <div className="space-y-4">
-                        {txs.map(tx => (
-                          <div key={tx.id} className="bg-white p-4 rounded-xl border border-slate-200/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-xs font-semibold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">{tx.tanggal}</span>
-                                <h5 className="font-medium text-slate-800">{tx.judul}</h5>
-                              </div>
-                              <div className="text-sm text-slate-500 flex items-center gap-4 mt-2">
-                                <span className="flex items-center gap-1"><Package size={14}/> {tx.qtySnack} Snack</span>
-                                <span className="flex items-center gap-1"><Package size={14}/> {tx.qtyNasi} Nasi</span>
-                              </div>
-                            </div>
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full md:w-auto mt-2 md:mt-0">
-                              <div className="text-left md:text-right">
-                                <div className="text-xs text-slate-500 mb-0.5">Base: {formatRupiah(tx.baseHarga)} | Pajak: {formatRupiah(tx.pajak)}</div>
-                                <div className="text-xs text-slate-400 mb-1">PPh: -{formatRupiah(tx.pph)}</div>
-                                <div className="font-bold text-emerald-700">{formatRupiah(tx.grandTotal)}</div>
-                              </div>
-                              <div className="flex items-center gap-2 md:pl-4 md:border-l border-slate-200 justify-end">
-                                <button 
-                                  onClick={() => handleOpenEdit(tx)}
-                                  className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                                  title="Edit"
-                                >
-                                  <Pencil size={16} />
-                                </button>
-                                <button 
-                                  onClick={() => handleOpenDelete(tx)}
-                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                  title="Hapus"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
             })
           )}
         </div>
       </div>
+
+      {/* History Details Modal */}
+      {selectedHistoryGroup && groupedTransactions[selectedHistoryGroup] && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-slate-50 rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-white sticky top-0 z-10">
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">
+                  {subKegiatans.find(sk => String(sk.id) === String(selectedHistoryGroup))?.nama || 'Sub Kegiatan Tidak Dikenal'}
+                </h3>
+                <p className="text-sm text-slate-500 mt-1">{groupedTransactions[selectedHistoryGroup].length} Transaksi Makan & Minum</p>
+              </div>
+              <button 
+                onClick={() => setSelectedHistoryGroup(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              <div className="space-y-4">
+                {groupedTransactions[selectedHistoryGroup].map(tx => (
+                  <div key={tx.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:shadow-md hover:border-emerald-200">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-semibold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full flex items-center gap-1">
+                          <Calendar size={12} /> {tx.tanggal}
+                        </span>
+                        <h5 className="font-bold text-slate-800 text-base">{tx.judul}</h5>
+                      </div>
+                      <div className="text-sm text-slate-600 flex items-center gap-5 mt-3 bg-slate-50 p-2 rounded-lg inline-flex">
+                        <span className="flex items-center gap-1.5"><Package size={16} className="text-emerald-500"/> {tx.qtySnack} Snack Box</span>
+                        <span className="w-px h-4 bg-slate-200"></span>
+                        <span className="flex items-center gap-1.5"><Package size={16} className="text-emerald-500"/> {tx.qtyNasi} Nasi Kotak</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full md:w-auto mt-2 md:mt-0">
+                      <div className="text-left md:text-right bg-slate-50 md:bg-transparent p-3 md:p-0 rounded-lg">
+                        <div className="text-xs text-slate-500 mb-1">Base: {formatRupiah(tx.baseHarga)} | Pajak: {formatRupiah(tx.pajak)}</div>
+                        <div className="text-xs text-rose-500 mb-1 font-medium">PPh 23: -{formatRupiah(tx.pph)}</div>
+                        <div className="font-bold text-emerald-600 text-lg">{formatRupiah(tx.grandTotal)}</div>
+                      </div>
+                      <div className="flex items-center gap-2 md:pl-5 md:border-l border-slate-200 justify-end">
+                        <button 
+                          onClick={() => {
+                            setSelectedHistoryGroup(null);
+                            handleOpenEdit(tx);
+                          }}
+                          className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil size={18} />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setSelectedHistoryGroup(null);
+                            handleOpenDelete(tx);
+                          }}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                          title="Hapus"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {isEditModalOpen && (

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppContext, Personil, PDTransaction } from '../store/AppContext';
 import { formatRupiah, parseRupiah } from '../utils/formatters';
-import { Plane, Plus, Trash2, Calendar, MapPin, FileText, Pencil, X } from 'lucide-react';
+import { Plane, Plus, Trash2, Calendar, MapPin, FileText, Pencil, X, ChevronRight, Users } from 'lucide-react';
 
 export const PDView = () => {
   const { subKegiatans, pdTransactions, addPDTransaction, editPDTransaction, deletePDTransaction } = useAppContext();
@@ -131,6 +131,24 @@ export const PDView = () => {
     deletePDTransaction(deleteId);
     setIsDeleteModalOpen(false);
   };
+
+  const [selectedHistoryGroup, setSelectedHistoryGroup] = useState<string | null>(null);
+
+  // Group by Sub Kegiatan
+  const groupedTransactions = useMemo(() => {
+    const groups: Record<string, PDTransaction[]> = {};
+    pdTransactions.forEach(tx => {
+      if (!groups[tx.subKegiatanId]) {
+        groups[tx.subKegiatanId] = [];
+      }
+      groups[tx.subKegiatanId].push(tx);
+    });
+    // Sort transactions by date descending within each group
+    Object.values(groups).forEach(txs => {
+      txs.sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime());
+    });
+    return groups;
+  }, [pdTransactions]);
 
   return (
     <div className="space-y-8">
@@ -265,73 +283,129 @@ export const PDView = () => {
         </form>
       </div>
 
-      {/* History Table */}
+      {/* History Grouped */}
       <div className="bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden shadow-sm">
         <div className="p-5 border-b border-slate-100 flex justify-between items-center">
           <h3 className="font-bold text-slate-800">Riwayat Perjalanan Dinas</h3>
         </div>
-        <div className="overflow-auto">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-slate-50 sticky top-0">
-              <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                <th className="px-5 py-3 border-b border-slate-100">Tanggal</th>
-                <th className="px-5 py-3 border-b border-slate-100">Judul & Wilayah</th>
-                <th className="px-5 py-3 border-b border-slate-100">Personil</th>
-                <th className="px-5 py-3 border-b border-slate-100 text-right">Total Biaya</th>
-                <th className="px-5 py-3 border-b border-slate-100 text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm divide-y divide-slate-100">
-              {pdTransactions.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-slate-400">
-                    Belum ada riwayat perjalanan dinas.
-                  </td>
-                </tr>
-              ) : (
-                pdTransactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-5 py-4 text-slate-600 whitespace-nowrap">{tx.tanggal}</td>
-                    <td className="px-5 py-4">
-                      <div className="font-semibold text-slate-700">{tx.judul}</div>
-                      <div className="text-[10px] text-slate-500 flex items-center gap-1 mt-1 font-bold uppercase tracking-wider"><MapPin size={12}/> {tx.wilayah}</div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="space-y-1.5 min-w-[200px]">
-                        {tx.personil.map(p => (
-                          <div key={p.id} className="text-xs flex justify-between gap-4 border-b border-slate-100 pb-1 last:border-0 last:pb-0">
-                            <span className="text-slate-600">{p.nama}</span>
-                            <span className="text-slate-500 font-medium">{formatRupiah(p.nominal)}</span>
-                          </div>
-                        ))}
+        
+        <div className="divide-y divide-slate-100">
+          {Object.keys(groupedTransactions).length === 0 ? (
+            <div className="p-12 text-center text-slate-400">
+              Belum ada riwayat perjalanan dinas.
+            </div>
+          ) : (
+            Object.entries(groupedTransactions).map(([subKegiatanId, txs]) => {
+              const subKegiatan = subKegiatans.find(sk => String(sk.id) === String(subKegiatanId));
+              const groupTotal = txs.reduce((sum, tx) => sum + tx.total, 0);
+
+              return (
+                <div key={subKegiatanId} className="bg-white">
+                  <button 
+                    onClick={() => setSelectedHistoryGroup(subKegiatanId)}
+                    className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors focus:outline-none"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-1 rounded-full transition-transform bg-slate-100 text-slate-400">
+                        <ChevronRight size={18} />
                       </div>
-                    </td>
-                    <td className="px-5 py-4 font-bold text-slate-700 whitespace-nowrap text-right">{formatRupiah(tx.total)}</td>
-                    <td className="px-5 py-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <button 
-                          onClick={() => handleOpenEdit(tx)}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <Pencil size={16} />
-                        </button>
-                        <button 
-                          onClick={() => handleOpenDelete(tx)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Hapus"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                      <div className="text-left">
+                        <h4 className="font-semibold text-slate-800">{subKegiatan?.nama || 'Sub Kegiatan Tidak Dikenal'}</h4>
+                        <p className="text-xs text-slate-500 mt-0.5">{txs.length} Transaksi</p>
                       </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                    </div>
+                    <div className="font-bold text-slate-900">
+                      {formatRupiah(groupTotal)}
+                    </div>
+                  </button>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
+
+      {/* History Details Modal */}
+      {selectedHistoryGroup && groupedTransactions[selectedHistoryGroup] && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-slate-50 rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-white sticky top-0 z-10">
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">
+                  {subKegiatans.find(sk => String(sk.id) === String(selectedHistoryGroup))?.nama || 'Sub Kegiatan Tidak Dikenal'}
+                </h3>
+                <p className="text-sm text-slate-500 mt-1">{groupedTransactions[selectedHistoryGroup].length} Transaksi Perjalanan Dinas</p>
+              </div>
+              <button 
+                onClick={() => setSelectedHistoryGroup(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              <div className="space-y-4">
+                {groupedTransactions[selectedHistoryGroup].map(tx => (
+                  <div key={tx.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between gap-4 transition-all hover:shadow-md hover:border-blue-200">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-semibold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full flex items-center gap-1">
+                          <Calendar size={12} /> {tx.tanggal}
+                        </span>
+                        <h5 className="font-bold text-slate-800 text-base">{tx.judul}</h5>
+                      </div>
+                      <div className="text-[11px] text-slate-500 flex items-center gap-1 mb-4 font-bold uppercase tracking-wider">
+                        <MapPin size={14} className="text-blue-500" /> {tx.wilayah}
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                        <div className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1">
+                          <Users size={14} /> Daftar Personil
+                        </div>
+                        <div className="space-y-1.5">
+                          {tx.personil.map(p => (
+                            <div key={p.id} className="text-sm flex justify-between gap-4 border-b border-slate-100 pb-1.5 last:border-0 last:pb-0">
+                              <span className="text-slate-700">{p.nama}</span>
+                              <span className="text-slate-600 font-medium">{formatRupiah(p.nominal)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full md:w-auto mt-2 md:mt-0 items-start md:items-end">
+                      <div className="text-left md:text-right bg-slate-50 md:bg-transparent p-3 md:p-0 rounded-lg w-full md:w-auto">
+                        <div className="text-xs text-slate-500 mb-1 font-medium">Total Biaya</div>
+                        <div className="font-bold text-blue-600 text-lg">{formatRupiah(tx.total)}</div>
+                      </div>
+                      <div className="flex items-center gap-2 md:pl-5 md:border-l border-slate-200 justify-end w-full md:w-auto">
+                        <button 
+                          onClick={() => {
+                            setSelectedHistoryGroup(null);
+                            handleOpenEdit(tx);
+                          }}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil size={18} />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setSelectedHistoryGroup(null);
+                            handleOpenDelete(tx);
+                          }}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                          title="Hapus"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {isEditModalOpen && (

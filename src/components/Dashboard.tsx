@@ -124,14 +124,14 @@ export const Dashboard = () => {
             Belum ada data sub kegiatan yang ditambahkan. Silakan tambahkan melalui menu Master Sub Kegiatan.
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden divide-y divide-slate-100">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {subKegiatanStats.map(stat => (
-              <div key={stat.id} className="p-5 hover:bg-slate-50/50 transition-colors flex flex-col gap-3">
-                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
+              <div key={stat.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 hover:border-blue-200 transition-colors flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
                   <h4 className="font-bold text-slate-800 text-sm">{stat.nama}</h4>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-1">
                   {/* Kolom PD */}
                   <div className="flex flex-col gap-1.5">
                     <div className="flex justify-between items-end">
