@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
-import { Settings, RefreshCcw } from 'lucide-react';
-import { SettingsModal } from './SettingsModal';
+import React from 'react';
+import { RefreshCcw } from 'lucide-react';
 import { useAppContext } from '../store/AppContext';
 
 export const Header = ({ activeTab }: { activeTab: string }) => {
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { gasUrl, isSyncing } = useAppContext();
   
   const isOnline = !!gasUrl;
@@ -32,17 +30,7 @@ export const Header = ({ activeTab }: { activeTab: string }) => {
             {isSyncing && <RefreshCcw size={12} className="animate-spin text-blue-500" />}
           </span>
         </div>
-        
-        <button 
-          onClick={() => setIsSettingsOpen(true)}
-          className="text-slate-500 hover:text-slate-800 transition-colors p-2 hover:bg-slate-100 rounded-full"
-          title="Pengaturan Database"
-        >
-          <Settings size={20} />
-        </button>
       </div>
-      
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </header>
   );
 };

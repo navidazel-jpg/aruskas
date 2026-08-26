@@ -90,13 +90,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [subKegiatans, setSubKegiatans] = useState<SubKegiatan[]>([]);
   const [pdTransactions, setPdTransactions] = useState<PDTransaction[]>([]);
   const [mmTransactions, setMmTransactions] = useState<MMTransaction[]>([]);
-  const [gasUrl, setGasUrlState] = useState<string>(localStorage.getItem('gasUrl') || '');
+  const HARDCODED_GAS_URL = "https://script.google.com/macros/s/AKfycbw4U-jbwpBbZHA0AlZzMw5rJy5REtu0BIjGMf88X7ViPt8NgfOiRE5N7xU-JrUp9CPY/exec";
+  const [gasUrl, setGasUrlState] = useState<string>(HARDCODED_GAS_URL);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isFirebaseReady, setIsFirebaseReady] = useState(true);
 
   const setGasUrl = (url: string) => {
     setGasUrlState(url);
-    localStorage.setItem('gasUrl', url);
   };
 
   const loadFromGAS = async () => {
