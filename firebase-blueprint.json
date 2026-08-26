@@ -1,0 +1,141 @@
+{
+  "entities": {
+    "SubKegiatan": {
+      "title": "SubKegiatan",
+      "description": "A sub-activity budget.",
+      "type": "object",
+      "properties": {
+        "nama": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "anggaranMurniPD": {
+          "type": "number"
+        },
+        "anggaranPerubahanPD": {
+          "type": "number"
+        },
+        "anggaranMurniMM": {
+          "type": "number"
+        },
+        "anggaranPerubahanMM": {
+          "type": "number"
+        },
+        "userId": {
+          "type": "string"
+        }
+      },
+      "required": ["nama", "anggaranMurniPD", "anggaranPerubahanPD", "anggaranMurniMM", "anggaranPerubahanMM", "userId"]
+    },
+    "Personil": {
+      "title": "Personil",
+      "description": "Personnel detail for PD Transaction",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "nama": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "nominal": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "nama", "nominal"]
+    },
+    "PDTransaction": {
+      "title": "PDTransaction",
+      "description": "Perjalanan Dinas transaction.",
+      "type": "object",
+      "properties": {
+        "subKegiatanId": {
+          "type": "string"
+        },
+        "judul": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "wilayah": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "tanggal": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "personil": {
+          "type": "array"
+        },
+        "total": {
+          "type": "number"
+        },
+        "userId": {
+          "type": "string"
+        }
+      },
+      "required": ["subKegiatanId", "judul", "wilayah", "tanggal", "personil", "total", "userId"]
+    },
+    "MMTransaction": {
+      "title": "MMTransaction",
+      "description": "Makan dan Minum transaction.",
+      "type": "object",
+      "properties": {
+        "subKegiatanId": {
+          "type": "string"
+        },
+        "judul": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "tanggal": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "qtySnack": {
+          "type": "number"
+        },
+        "qtyNasi": {
+          "type": "number"
+        },
+        "baseHarga": {
+          "type": "number"
+        },
+        "pajak": {
+          "type": "number"
+        },
+        "pph": {
+          "type": "number"
+        },
+        "grandTotal": {
+          "type": "number"
+        },
+        "userId": {
+          "type": "string"
+        }
+      },
+      "required": ["subKegiatanId", "judul", "tanggal", "qtySnack", "qtyNasi", "baseHarga", "pajak", "pph", "grandTotal", "userId"]
+    }
+  },
+  "firestore": {
+    "users/{userId}/subKegiatans/{subKegiatanId}": {
+      "schema": {
+        "$ref": "#/entities/SubKegiatan"
+      },
+      "description": "Sub kegiatans for a user."
+    },
+    "users/{userId}/pdTransactions/{transactionId}": {
+      "schema": {
+        "$ref": "#/entities/PDTransaction"
+      },
+      "description": "PD Transactions for a user."
+    },
+    "users/{userId}/mmTransactions/{transactionId}": {
+      "schema": {
+        "$ref": "#/entities/MMTransaction"
+      },
+      "description": "MM Transactions for a user."
+    }
+  }
+}

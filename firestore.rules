@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidSubKegiatan(data) {
+      return data.keys().hasAll(['nama', 'anggaranMurniPD', 'anggaranPerubahanPD', 'anggaranMurniMM', 'anggaranPerubahanMM', 'userId'])
+          && data.keys().size() == 6
+          && data.nama is string && data.nama.size() <= 100
+          && data.anggaranMurniPD is number
+          && data.anggaranPerubahanPD is number
+          && data.anggaranMurniMM is number
+          && data.anggaranPerubahanMM is number
+          && data.userId == request.auth.uid;
+    }
+    
+    function isValidPersonil(data) {
+      return data.keys().hasAll(['id', 'nama', 'nominal'])
+          && data.keys().size() == 3
+          && data.id is string && data.id.size() <= 128
+          && data.nama is string && data.nama.size() <= 100
+          && data.nominal is number;
+    }
+
+    function isValidPDTransaction(data) {
+      return data.keys().hasAll(['subKegiatanId', 'judul', 'wilayah', 'tanggal', 'personil', 'total', 'userId'])
+          && data.keys().size() == 7
+          && data.subKegiatanId is string && data.subKegiatanId.size() <= 128
+          && data.judul is string && data.judul.size() <= 100
+          && data.wilayah is string && data.wilayah.size() <= 100
+          && data.tanggal is string && data.tanggal.size() <= 50
+          && data.personil is list && data.personil.size() <= 100
+          && (data.personil.size() == 0 || isValidPersonil(data.personil[0]))
+          && data.total is number
+          && data.userId == request.auth.uid;
+    }
+
+    function isValidMMTransaction(data) {
+      return data.keys().hasAll(['subKegiatanId', 'judul', 'tanggal', 'qtySnack', 'qtyNasi', 'baseHarga', 'pajak', 'pph', 'grandTotal', 'userId'])
+          && data.keys().size() == 10
+          && data.subKegiatanId is string && data.subKegiatanId.size() <= 128
+          && data.judul is string && data.judul.size() <= 100
+          && data.tanggal is string && data.tanggal.size() <= 50
+          && data.qtySnack is number
+          && data.qtyNasi is number
+          && data.baseHarga is number
+          && data.pajak is number
+          && data.pph is number
+          && data.grandTotal is number
+          && data.userId == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      match /subKegiatans/{subKegiatanId} {
+        allow get, create, update, delete: if isValidId(userId) && isValidId(subKegiatanId) && isSignedIn() && request.auth.uid == userId;
+        allow list: if isValidId(userId) && isSignedIn() && request.auth.uid == userId;
+        
+        allow create: if isSignedIn() && request.auth.uid == userId && isValidSubKegiatan(incoming());
+        allow update: if isSignedIn() && request.auth.uid == userId && isValidSubKegiatan(incoming()) && incoming().userId == existing().userId;
+      }
+
+      match /pdTransactions/{transactionId} {
+        allow get, create, update, delete: if isValidId(userId) && isValidId(transactionId) && isSignedIn() && request.auth.uid == userId;
+        allow list: if isValidId(userId) && isSignedIn() && request.auth.uid == userId;
+        
+        allow create: if isSignedIn() && request.auth.uid == userId && isValidPDTransaction(incoming());
+        allow update: if isSignedIn() && request.auth.uid == userId && isValidPDTransaction(incoming()) && incoming().userId == existing().userId;
+      }
+      
+      match /mmTransactions/{transactionId} {
+        allow get, create, update, delete: if isValidId(userId) && isValidId(transactionId) && isSignedIn() && request.auth.uid == userId;
+        allow list: if isValidId(userId) && isSignedIn() && request.auth.uid == userId;
+        
+        allow create: if isSignedIn() && request.auth.uid == userId && isValidMMTransaction(incoming());
+        allow update: if isSignedIn() && request.auth.uid == userId && isValidMMTransaction(incoming()) && incoming().userId == existing().userId;
+      }
+    }
+  }
+}
