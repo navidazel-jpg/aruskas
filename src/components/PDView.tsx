@@ -55,7 +55,18 @@ export const PDView = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subKegiatanId || !judul || !tanggal || personilList.some(p => !p.nama || p.nominal <= 0)) return;
+    if (!subKegiatanId) {
+      alert('Gagal menyimpan: Silakan pilih Sub Kegiatan terlebih dahulu. (Jika kosong, pastikan Anda sudah membuat Sub Kegiatan untuk tahun ini)');
+      return;
+    }
+    if (personilList.some(p => !p.nama || p.nominal < 0)) {
+      alert('Gagal menyimpan: Pastikan semua personil memiliki nama dan nominal tidak boleh minus.');
+      return;
+    }
+    if (!judul || !tanggal) {
+      alert('Gagal menyimpan: Pastikan judul dan tanggal sudah diisi.');
+      return;
+    }
 
     addPDTransaction({
       id: Date.now().toString(),
@@ -85,7 +96,18 @@ export const PDView = () => {
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editSubKegiatanId || !editJudul || !editTanggal || editPersonilList.some(p => !p.nama || p.nominal <= 0)) return;
+    if (!editSubKegiatanId) {
+      alert('Gagal menyimpan: Silakan pilih Sub Kegiatan.');
+      return;
+    }
+    if (editPersonilList.some(p => !p.nama || p.nominal < 0)) {
+      alert('Gagal menyimpan: Pastikan semua personil memiliki nama dan nominal tidak boleh minus.');
+      return;
+    }
+    if (!editJudul || !editTanggal) {
+      alert('Gagal menyimpan: Pastikan judul dan tanggal sudah diisi.');
+      return;
+    }
 
     editPDTransaction(editId, {
       id: editId,
@@ -128,7 +150,7 @@ export const PDView = () => {
                 className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors bg-white"
               >
                 <option value="">-- Pilih Sub Kegiatan --</option>
-                {subKegiatans.map(sk => (
+                {subKegiatans.filter(sk => sk.anggaranMurniPD > 0 || sk.anggaranPerubahanPD > 0).map(sk => (
                   <option key={sk.id} value={sk.id}>{sk.nama}</option>
                 ))}
               </select>
@@ -336,7 +358,7 @@ export const PDView = () => {
                       className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors bg-white"
                     >
                       <option value="">-- Pilih Sub Kegiatan --</option>
-                      {subKegiatans.map(sk => (
+                      {subKegiatans.filter(sk => sk.anggaranMurniPD > 0 || sk.anggaranPerubahanPD > 0).map(sk => (
                         <option key={sk.id} value={sk.id}>{sk.nama}</option>
                       ))}
                     </select>

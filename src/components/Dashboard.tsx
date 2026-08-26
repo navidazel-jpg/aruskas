@@ -32,12 +32,12 @@ export const Dashboard = () => {
   const subKegiatanStats = useMemo(() => {
     return subKegiatans.map(sk => {
       const pdPagu = sk.anggaranPerubahanPD > 0 ? sk.anggaranPerubahanPD : sk.anggaranMurniPD;
-      const pdRealisasi = pdTransactions.filter(tx => tx.subKegiatanId === sk.id).reduce((sum, tx) => sum + tx.total, 0);
+      const pdRealisasi = pdTransactions.filter(tx => String(tx.subKegiatanId) === String(sk.id)).reduce((sum, tx) => sum + tx.total, 0);
       const pdSisa = Math.max(0, pdPagu - pdRealisasi);
       const pdPercent = pdPagu > 0 ? (pdRealisasi / pdPagu) * 100 : 0;
 
       const mmPagu = sk.anggaranPerubahanMM > 0 ? sk.anggaranPerubahanMM : sk.anggaranMurniMM;
-      const mmRealisasi = mmTransactions.filter(tx => tx.subKegiatanId === sk.id).reduce((sum, tx) => sum + tx.grandTotal, 0);
+      const mmRealisasi = mmTransactions.filter(tx => String(tx.subKegiatanId) === String(sk.id)).reduce((sum, tx) => sum + tx.grandTotal, 0);
       const mmSisa = Math.max(0, mmPagu - mmRealisasi);
       const mmPercent = mmPagu > 0 ? (mmRealisasi / mmPagu) * 100 : 0;
 

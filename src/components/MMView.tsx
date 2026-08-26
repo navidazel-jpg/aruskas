@@ -39,10 +39,10 @@ export const MMView = () => {
   const grandTotal = baseHarga + pajak;
 
   // Budget Validation
-  const selectedSubKegiatan = subKegiatans.find(sk => sk.id === subKegiatanId);
+  const selectedSubKegiatan = subKegiatans.find(sk => String(sk.id) === String(subKegiatanId));
   const paguMM = selectedSubKegiatan ? (selectedSubKegiatan.anggaranPerubahanMM > 0 ? selectedSubKegiatan.anggaranPerubahanMM : selectedSubKegiatan.anggaranMurniMM) : 0;
   const realisasiMM = mmTransactions
-    .filter(tx => tx.subKegiatanId === subKegiatanId)
+    .filter(tx => String(tx.subKegiatanId) === String(subKegiatanId))
     .reduce((sum, tx) => sum + tx.grandTotal, 0);
   const sisaAnggaranMM = paguMM - realisasiMM;
   const isOverBudget = subKegiatanId !== '' && grandTotal > sisaAnggaranMM;
@@ -55,17 +55,28 @@ export const MMView = () => {
   const editGrandTotal = editBaseHarga + editPajak;
 
   // Edit Budget Validation
-  const editSelectedSubKegiatan = subKegiatans.find(sk => sk.id === editSubKegiatanId);
+  const editSelectedSubKegiatan = subKegiatans.find(sk => String(sk.id) === String(editSubKegiatanId));
   const editPaguMM = editSelectedSubKegiatan ? (editSelectedSubKegiatan.anggaranPerubahanMM > 0 ? editSelectedSubKegiatan.anggaranPerubahanMM : editSelectedSubKegiatan.anggaranMurniMM) : 0;
   const editRealisasiMM = mmTransactions
-    .filter(tx => tx.subKegiatanId === editSubKegiatanId && tx.id !== editId)
+    .filter(tx => String(tx.subKegiatanId) === String(editSubKegiatanId) && String(tx.id) !== String(editId))
     .reduce((sum, tx) => sum + tx.grandTotal, 0);
   const editSisaAnggaranMM = editPaguMM - editRealisasiMM;
   const isEditOverBudget = editSubKegiatanId !== '' && editGrandTotal > editSisaAnggaranMM;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subKegiatanId || !judul || !tanggal || (numSnack === 0 && numNasi === 0)) return;
+    if (!subKegiatanId) {
+      alert('Gagal menyimpan: Silakan pilih Sub Kegiatan terlebih dahulu. (Jika kosong, pastikan Anda sudah membuat Sub Kegiatan untuk tahun ini)');
+      return;
+    }
+    if (numSnack < 0 || numNasi < 0) {
+      alert('Gagal menyimpan: Jumlah tidak boleh minus.');
+      return;
+    }
+    if (!judul || !tanggal) {
+      alert('Gagal menyimpan: Pastikan judul dan tanggal sudah diisi.');
+      return;
+    }
 
     addMMTransaction({
       id: Date.now().toString(),
@@ -98,7 +109,18 @@ export const MMView = () => {
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editSubKegiatanId || !editJudul || !editTanggal || (editNumSnack === 0 && editNumNasi === 0)) return;
+    if (!editSubKegiatanId) {
+      alert('Gagal menyimpan: Silakan pilih Sub Kegiatan.');
+      return;
+    }
+    if (editNumSnack < 0 || editNumNasi < 0) {
+      alert('Gagal menyimpan: Jumlah tidak boleh minus.');
+      return;
+    }
+    if (!editJudul || !editTanggal) {
+      alert('Gagal menyimpan: Pastikan judul dan tanggal sudah diisi.');
+      return;
+    }
 
     editMMTransaction(editId, {
       id: editId,
@@ -163,7 +185,7 @@ export const MMView = () => {
                 className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors bg-white"
               >
                 <option value="">-- Pilih Sub Kegiatan --</option>
-                {subKegiatans.map(sk => (
+                {subKegiatans.filter(sk => sk.anggaranMurniMM > 0 || sk.anggaranPerubahanMM > 0).map(sk => (
                   <option key={sk.id} value={sk.id}>{sk.nama}</option>
                 ))}
               </select>
@@ -285,7 +307,7 @@ export const MMView = () => {
             </div>
           ) : (
             Object.entries(groupedTransactions).map(([subKegiatanId, txs]) => {
-              const subKegiatan = subKegiatans.find(sk => sk.id === subKegiatanId);
+              const subKegiatan = subKegiatans.find(sk => String(sk.id) === String(subKegiatanId));
               const isExpanded = !!expandedGroups[subKegiatanId];
               const groupTotal = txs.reduce((sum, tx) => sum + tx.grandTotal, 0);
 
@@ -384,7 +406,7 @@ export const MMView = () => {
                       className="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors bg-white"
                     >
                       <option value="">-- Pilih Sub Kegiatan --</option>
-                      {subKegiatans.map(sk => (
+                      {subKegiatans.filter(sk => sk.anggaranMurniMM > 0 || sk.anggaranPerubahanMM > 0).map(sk => (
                         <option key={sk.id} value={sk.id}>{sk.nama}</option>
                       ))}
                     </select>

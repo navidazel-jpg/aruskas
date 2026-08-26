@@ -78,7 +78,10 @@ export const SubKegiatanView = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nama) return;
+    if (!nama) {
+      alert('Gagal menyimpan: Nama Sub Kegiatan harus diisi.');
+      return;
+    }
     
     addSubKegiatan({
       id: Date.now().toString(),

@@ -101,9 +101,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear() === 2026 ? 2026 : 2026); // Default 2026
   
   // Derived state based on selected year. If a record lacks 'tahun', assume it belongs to 2026.
-  const subKegiatans = allSubKegiatans.filter(sk => (sk.tahun || 2026) === selectedYear);
-  const pdTransactions = allPdTransactions.filter(pd => (pd.tahun || 2026) === selectedYear);
-  const mmTransactions = allMmTransactions.filter(mm => (mm.tahun || 2026) === selectedYear);
+  const subKegiatans = allSubKegiatans.filter(sk => Number(sk.tahun || 2026) === selectedYear);
+  const pdTransactions = allPdTransactions.filter(pd => Number(pd.tahun || 2026) === selectedYear);
+  const mmTransactions = allMmTransactions.filter(mm => Number(mm.tahun || 2026) === selectedYear);
 
   const HARDCODED_GAS_URL = "https://script.google.com/macros/s/AKfycbw4U-jbwpBbZHA0AlZzMw5rJy5REtu0BIjGMf88X7ViPt8NgfOiRE5N7xU-JrUp9CPY/exec";
   const [gasUrl, setGasUrlState] = useState<string>(HARDCODED_GAS_URL);
