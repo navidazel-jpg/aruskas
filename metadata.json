@@ -1,5 +1,5 @@
 {
-  "name": "Budget Analytics Dashboard",
+  "name": "Arus Kas",
   "description": "Dashboard for managing official travel and consumption budgets.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

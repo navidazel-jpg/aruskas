@@ -63,17 +63,19 @@ export const PDView = () => {
       alert('Gagal menyimpan: Pastikan semua personil memiliki nama dan nominal tidak boleh minus.');
       return;
     }
-    if (!judul || !tanggal) {
-      alert('Gagal menyimpan: Pastikan judul dan tanggal sudah diisi.');
+    if (!judul) {
+      alert('Gagal menyimpan: Pastikan judul sudah diisi.');
       return;
     }
+
+    const currentDate = new Date().toISOString().split('T')[0];
 
     addPDTransaction({
       id: Date.now().toString(),
       subKegiatanId,
       judul,
       wilayah,
-      tanggal,
+      tanggal: currentDate,
       personil: [...personilList],
       total: grandTotal
     });
@@ -104,8 +106,8 @@ export const PDView = () => {
       alert('Gagal menyimpan: Pastikan semua personil memiliki nama dan nominal tidak boleh minus.');
       return;
     }
-    if (!editJudul || !editTanggal) {
-      alert('Gagal menyimpan: Pastikan judul dan tanggal sudah diisi.');
+    if (!editJudul) {
+      alert('Gagal menyimpan: Pastikan judul sudah diisi.');
       return;
     }
 
@@ -158,7 +160,7 @@ export const PDView = () => {
           <Plane className="text-blue-500" size={20} /> Input SPPD Baru
         </h3>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Sub Kegiatan</label>
               <select 
@@ -172,19 +174,6 @@ export const PDView = () => {
                   <option key={sk.id} value={sk.id}>{sk.nama}</option>
                 ))}
               </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Tanggal</label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input 
-                  type="date" 
-                  required
-                  value={tanggal}
-                  onChange={e => setTanggal(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors bg-white"
-                />
-              </div>
             </div>
           </div>
 
@@ -422,7 +411,7 @@ export const PDView = () => {
             </div>
             <div className="p-6 overflow-y-auto">
               <form id="edit-pd-form" onSubmit={handleEditSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Sub Kegiatan</label>
                     <select 
@@ -436,19 +425,6 @@ export const PDView = () => {
                         <option key={sk.id} value={sk.id}>{sk.nama}</option>
                       ))}
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Tanggal</label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                      <input 
-                        type="date" 
-                        required
-                        value={editTanggal}
-                        onChange={e => setEditTanggal(e.target.value)}
-                        className="w-full rounded-xl border border-slate-300 pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-colors bg-white"
-                      />
-                    </div>
                   </div>
                 </div>
 
