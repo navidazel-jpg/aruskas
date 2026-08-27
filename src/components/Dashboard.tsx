@@ -9,12 +9,10 @@ export const Dashboard = () => {
   const [chartType, setChartType] = useState<'pie' | 'bar' | 'line'>('pie');
   
   // Computations for Global Chart
-
-  const globalPdPagu = useMemo(() => subKegiatans.reduce((sum, item) => sum + (item.anggaranPerubahanPD > 0 ? item.anggaranPerubahanPD : item.anggaranMurniPD), 0), [subKegiatans]);
+  const globalPdPagu = useMemo(() => subKegiatans.reduce((sum, item) => sum + (item.anggaranMurniPD + (item.anggaranPerubahanPD || 0)), 0), [subKegiatans]);
   const globalPdRealisasi = useMemo(() => pdTransactions.reduce((sum, item) => sum + item.total, 0), [pdTransactions]);
   const globalPdSisa = Math.max(0, globalPdPagu - globalPdRealisasi);
-
-  const globalMmPagu = useMemo(() => subKegiatans.reduce((sum, item) => sum + (item.anggaranPerubahanMM > 0 ? item.anggaranPerubahanMM : item.anggaranMurniMM), 0), [subKegiatans]);
+  const globalMmPagu = useMemo(() => subKegiatans.reduce((sum, item) => sum + (item.anggaranMurniMM + (item.anggaranPerubahanMM || 0)), 0), [subKegiatans]);
   const globalMmRealisasi = useMemo(() => mmTransactions.reduce((sum, item) => sum + item.grandTotal, 0), [mmTransactions]);
   const globalMmSisa = Math.max(0, globalMmPagu - globalMmRealisasi);
 
@@ -31,12 +29,12 @@ export const Dashboard = () => {
   // Computations Per Sub Kegiatan
   const subKegiatanStats = useMemo(() => {
     return subKegiatans.map(sk => {
-      const pdPagu = sk.anggaranPerubahanPD > 0 ? sk.anggaranPerubahanPD : sk.anggaranMurniPD;
+      const pdPagu = sk.anggaranMurniPD + (sk.anggaranPerubahanPD || 0);
       const pdRealisasi = pdTransactions.filter(tx => String(tx.subKegiatanId) === String(sk.id)).reduce((sum, tx) => sum + tx.total, 0);
       const pdSisa = Math.max(0, pdPagu - pdRealisasi);
       const pdPercent = pdPagu > 0 ? (pdRealisasi / pdPagu) * 100 : 0;
 
-      const mmPagu = sk.anggaranPerubahanMM > 0 ? sk.anggaranPerubahanMM : sk.anggaranMurniMM;
+      const mmPagu = sk.anggaranMurniMM + (sk.anggaranPerubahanMM || 0);
       const mmRealisasi = mmTransactions.filter(tx => String(tx.subKegiatanId) === String(sk.id)).reduce((sum, tx) => sum + tx.grandTotal, 0);
       const mmSisa = Math.max(0, mmPagu - mmRealisasi);
       const mmPercent = mmPagu > 0 ? (mmRealisasi / mmPagu) * 100 : 0;

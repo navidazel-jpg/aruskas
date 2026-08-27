@@ -104,8 +104,10 @@ export const SubKegiatanView = () => {
   // Computations for Table
   const tableData = useMemo(() => {
     return subKegiatans.map(sk => {
-      const paguPD = sk.anggaranPerubahanPD > 0 ? sk.anggaranPerubahanPD : sk.anggaranMurniPD;
-      const paguMM = sk.anggaranPerubahanMM > 0 ? sk.anggaranPerubahanMM : sk.anggaranMurniMM;
+      const totalMurni = sk.anggaranMurniPD + sk.anggaranMurniMM;
+      const totalPerubahan = (sk.anggaranPerubahanPD || 0) + (sk.anggaranPerubahanMM || 0);
+      const paguPD = sk.anggaranMurniPD + (sk.anggaranPerubahanPD || 0);
+      const paguMM = sk.anggaranMurniMM + (sk.anggaranPerubahanMM || 0);
       
       const realisasiPD = pdTransactions.filter(tx => tx.subKegiatanId === sk.id).reduce((sum, tx) => sum + tx.total, 0);
       const realisasiMM = mmTransactions.filter(tx => tx.subKegiatanId === sk.id).reduce((sum, tx) => sum + tx.grandTotal, 0);
@@ -117,6 +119,8 @@ export const SubKegiatanView = () => {
       
       return {
         ...sk,
+        totalMurni,
+        totalPerubahan,
         totalPagu,
         totalRealisasi,
         sisa,
@@ -230,9 +234,11 @@ export const SubKegiatanView = () => {
             <thead className="bg-slate-50 sticky top-0">
               <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                 <th className="px-5 py-3 border-b border-slate-100">Sub Kegiatan</th>
-                <th className="px-5 py-3 border-b border-slate-100">Pagu Aktif</th>
-                <th className="px-5 py-3 border-b border-slate-100">Total Realisasi</th>
-                <th className="px-5 py-3 border-b border-slate-100">Sisa Anggaran</th>
+                <th className="px-5 py-3 border-b border-slate-100">Anggaran Murni</th>
+                <th className="px-5 py-3 border-b border-slate-100">Tambahan (Perubahan)</th>
+                <th className="px-5 py-3 border-b border-slate-100 text-blue-600">Total Pagu</th>
+                <th className="px-5 py-3 border-b border-slate-100">Realisasi</th>
+                <th className="px-5 py-3 border-b border-slate-100">Sisa</th>
                 <th className="px-5 py-3 border-b border-slate-100 text-center">Status</th>
                 <th className="px-5 py-3 border-b border-slate-100 text-center">Aksi</th>
               </tr>
@@ -240,7 +246,7 @@ export const SubKegiatanView = () => {
             <tbody className="text-sm divide-y divide-slate-100">
               {tableData.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-slate-400">
+                  <td colSpan={8} className="px-5 py-12 text-center text-slate-400">
                     Belum ada data sub kegiatan.
                   </td>
                 </tr>
@@ -248,7 +254,9 @@ export const SubKegiatanView = () => {
                 tableData.map((row) => (
                   <tr key={row.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-4 font-semibold text-slate-700">{row.nama}</td>
-                    <td className="px-5 py-4 text-slate-600">{formatRupiah(row.totalPagu)}</td>
+                    <td className="px-5 py-4 text-slate-500">{formatRupiah(row.totalMurni)}</td>
+                    <td className="px-5 py-4 text-emerald-600 font-medium">{row.totalPerubahan > 0 ? '+' : ''}{formatRupiah(row.totalPerubahan)}</td>
+                    <td className="px-5 py-4 text-blue-700 font-bold bg-blue-50/30">{formatRupiah(row.totalPagu)}</td>
                     <td className="px-5 py-4 text-slate-600">{formatRupiah(row.totalRealisasi)}</td>
                     <td className="px-5 py-4 font-semibold text-slate-700">{formatRupiah(row.sisa)}</td>
                     <td className="px-5 py-4 text-center">
