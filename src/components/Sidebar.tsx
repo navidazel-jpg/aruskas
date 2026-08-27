@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Wallet, Plane, Coffee } from 'lucide-react';
+import { LayoutDashboard, Wallet, Plane, Coffee, FileText } from 'lucide-react';
 
 type SidebarProps = {
   activeTab: string;
@@ -12,6 +12,7 @@ export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
     { id: 'subkegiatan', label: 'Sub Kegiatan', icon: Wallet },
     { id: 'pd', label: 'Perjalanan Dinas', icon: Plane },
     { id: 'mm', label: 'Makan & Minum', icon: Coffee },
+    { id: 'dpa', label: 'Dokumen DPA', icon: FileText },
   ];
 
   return (

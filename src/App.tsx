@@ -10,6 +10,7 @@ import { Dashboard } from './components/Dashboard';
 import { SubKegiatanView } from './components/SubKegiatanView';
 import { PDView } from './components/PDView';
 import { MMView } from './components/MMView';
+import { DPAView } from './components/DPAView';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -25,6 +26,7 @@ export default function App() {
             {activeTab === 'subkegiatan' && <SubKegiatanView />}
             {activeTab === 'pd' && <PDView />}
             {activeTab === 'mm' && <MMView />}
+            {activeTab === 'dpa' && <DPAView />}
           </div>
         </main>
       </div>

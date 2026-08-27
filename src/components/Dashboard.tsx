@@ -17,10 +17,10 @@ export const Dashboard = () => {
   const globalMmSisa = Math.max(0, globalMmPagu - globalMmRealisasi);
 
   const chartData = [
-    { name: 'Realisasi PD', value: globalPdRealisasi, color: '#3b82f6' },
-    { name: 'Sisa PD', value: globalPdSisa, color: '#93c5fd' },
-    { name: 'Realisasi MM', value: globalMmRealisasi, color: '#10b981' },
-    { name: 'Sisa MM', value: globalMmSisa, color: '#6ee7b7' },
+    { name: 'Realisasi Perjalanan Dinas', value: globalPdRealisasi, color: '#3b82f6' },
+    { name: 'Sisa Perjalanan Dinas', value: globalPdSisa, color: '#93c5fd' },
+    { name: 'Realisasi Makan & Minum', value: globalMmRealisasi, color: '#10b981' },
+    { name: 'Sisa Makan & Minum', value: globalMmSisa, color: '#6ee7b7' },
   ];
 
   const globalPdPercent = globalPdPagu > 0 ? (globalPdRealisasi / globalPdPagu) * 100 : 0;
