@@ -45,10 +45,19 @@ export type MMTransaction = {
   tahun?: number;
 };
 
+export type DPAFile = {
+  id: string;
+  name: string;
+  dataUrl: string;
+  uploadedAt: number;
+};
+
 type AppState = {
   subKegiatans: SubKegiatan[];
   pdTransactions: PDTransaction[];
   mmTransactions: MMTransaction[];
+  dpaFiles: DPAFile[];
+  setDpaFiles: (files: DPAFile[]) => void;
   addSubKegiatan: (item: SubKegiatan) => void;
   editSubKegiatan: (id: string, item: SubKegiatan) => void;
   deleteSubKegiatan: (id: string) => void;
@@ -72,6 +81,8 @@ const initialState: AppState = {
   subKegiatans: [],
   pdTransactions: [],
   mmTransactions: [],
+  dpaFiles: [],
+  setDpaFiles: () => {},
   addSubKegiatan: () => {},
   editSubKegiatan: () => {},
   deleteSubKegiatan: () => {},
@@ -97,6 +108,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [allSubKegiatans, setAllSubKegiatans] = useState<SubKegiatan[]>([]);
   const [allPdTransactions, setAllPdTransactions] = useState<PDTransaction[]>([]);
   const [allMmTransactions, setAllMmTransactions] = useState<MMTransaction[]>([]);
+  const [dpaFiles, setDpaFilesState] = useState<DPAFile[]>([]);
   
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear() === 2026 ? 2026 : 2026); // Default 2026
   
@@ -110,6 +122,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isFirebaseReady, setIsFirebaseReady] = useState(true);
 
+  const setDpaFiles = (files: DPAFile[]) => {
+    setDpaFilesState(files);
+    saveToGAS(allSubKegiatans, allPdTransactions, allMmTransactions, files);
+  };
+
   const setGasUrl = (url: string) => {
     setGasUrlState(url);
   };
@@ -122,6 +139,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setAllSubKegiatans(data.subKegiatans || []);
       setAllPdTransactions(data.pdTransactions || []);
       setAllMmTransactions(data.mmTransactions || []);
+      setDpaFilesState(data.dpaFiles || []);
     } catch (err) {
       console.error(err);
       alert('Gagal mengambil data dari Google Sheets. Pastikan URL Web App valid dan sudah diset ke "Execute as me, access to anyone".');
@@ -134,11 +152,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     loadFromGAS();
   }, [gasUrl]);
 
-  const saveToGAS = async (newSk: SubKegiatan[], newPd: PDTransaction[], newMm: MMTransaction[]) => {
+  const saveToGAS = async (newSk: SubKegiatan[], newPd: PDTransaction[], newMm: MMTransaction[], newDpa: DPAFile[] = dpaFiles) => {
     if (!gasUrl) return;
     setIsSyncing(true);
     try {
-      await syncToGAS(gasUrl, newSk, newPd, newMm);
+      await syncToGAS(gasUrl, newSk, newPd, newMm, newDpa);
     } catch (err) {
       console.error(err);
       alert('Gagal menyimpan ke Google Sheets.');
@@ -210,7 +228,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AppContext.Provider value={{
-      subKegiatans, pdTransactions, mmTransactions,
+      subKegiatans, pdTransactions, mmTransactions, dpaFiles, setDpaFiles,
       addSubKegiatan, editSubKegiatan, deleteSubKegiatan,
       addPDTransaction, editPDTransaction, deletePDTransaction,
       addMMTransaction, editMMTransaction, deleteMMTransaction,

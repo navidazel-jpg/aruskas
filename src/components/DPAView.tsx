@@ -1,16 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Upload, FileText, Trash2, Eye, RefreshCw, CheckCircle, Plus } from 'lucide-react';
-import { get, set, del } from 'idb-keyval';
+import { useAppContext, DPAFile } from '../store/AppContext';
 
-type DPAFile = {
-  id: string;
-  name: string;
-  dataUrl: string;
-  uploadedAt: number;
-};
+
 
 export const DPAView = () => {
-  const [dpaFiles, setDpaFiles] = useState<DPAFile[]>([]);
+  const { dpaFiles, setDpaFiles } = useAppContext();
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   
   const [isUploading, setIsUploading] = useState(false);
@@ -20,17 +15,11 @@ export const DPAView = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Load existing DPAs on mount
-    get('dpa_documents').then((data) => {
-      if (data && Array.isArray(data)) {
-        setDpaFiles(data);
-        if (data.length > 0) {
-          setSelectedFileId(data[0].id);
-        }
-      }
-      setIsReady(true);
-    });
-  }, []);
+    if (dpaFiles.length > 0 && !selectedFileId) {
+      setSelectedFileId(dpaFiles[0].id);
+    }
+    setIsReady(true);
+  }, [dpaFiles, selectedFileId]);
 
   const processFiles = async (files: File[]) => {
     const pdfFiles = files.filter(f => f.type === 'application/pdf');
@@ -67,7 +56,7 @@ export const DPAView = () => {
     setUploadProgress(100);
     
     const updatedList = [...dpaFiles, ...newFiles];
-    await set('dpa_documents', updatedList);
+    // 
     
     setTimeout(() => {
       setDpaFiles(updatedList);
