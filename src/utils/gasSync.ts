@@ -1,4 +1,4 @@
-export const syncToGAS = async (gasUrl: string, subKegiatans: any[], pdTransactions: any[], mmTransactions: any[], dpaFiles: any[] = []) => {
+export const syncToGAS = async (gasUrl: string, subKegiatans: any[], pdTransactions: any[], mmTransactions: any[]) => {
   if (!gasUrl) throw new Error('GAS URL is not set');
   try {
     const res = await fetch(gasUrl, {
@@ -8,8 +8,7 @@ export const syncToGAS = async (gasUrl: string, subKegiatans: any[], pdTransacti
         payload: {
           subKegiatans,
           pdTransactions,
-          mmTransactions,
-          dpaFiles
+          mmTransactions
         }
       })
     });

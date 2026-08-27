@@ -1,11 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, FileText, Trash2, Eye, RefreshCw, CheckCircle, Plus } from 'lucide-react';
-import { useAppContext, DPAFile } from '../store/AppContext';
+import { Upload, FileText, Trash2, RefreshCw, CheckCircle, Plus } from 'lucide-react';
+import { get, set } from 'idb-keyval';
 
-
+type DPAFile = {
+  id: string;
+  name: string;
+  dataUrl: string;
+  uploadedAt: number;
+};
 
 export const DPAView = () => {
-  const { dpaFiles, setDpaFiles } = useAppContext();
+  const [dpaFiles, setDpaFiles] = useState<DPAFile[]>([]);
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   
   const [isUploading, setIsUploading] = useState(false);
@@ -15,11 +20,17 @@ export const DPAView = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (dpaFiles.length > 0 && !selectedFileId) {
-      setSelectedFileId(dpaFiles[0].id);
-    }
-    setIsReady(true);
-  }, [dpaFiles, selectedFileId]);
+    // Load existing DPAs from local IndexedDB on mount
+    get('dpa_documents').then((data) => {
+      if (data && Array.isArray(data)) {
+        setDpaFiles(data);
+        if (data.length > 0) {
+          setSelectedFileId(data[0].id);
+        }
+      }
+      setIsReady(true);
+    });
+  }, []);
 
   const processFiles = async (files: File[]) => {
     const pdfFiles = files.filter(f => f.type === 'application/pdf');
@@ -55,14 +66,15 @@ export const DPAView = () => {
     clearInterval(interval);
     setUploadProgress(100);
     
+    // Save locally
     const updatedList = [...dpaFiles, ...newFiles];
-    // 
+    setDpaFiles(updatedList);
+    if (!selectedFileId && updatedList.length > 0) {
+      setSelectedFileId(updatedList[0].id);
+    }
+    await set('dpa_documents', updatedList);
     
     setTimeout(() => {
-      setDpaFiles(updatedList);
-      if (!selectedFileId && updatedList.length > 0) {
-        setSelectedFileId(updatedList[0].id);
-      }
       setIsUploading(false);
       setUploadProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -97,12 +109,13 @@ export const DPAView = () => {
     e.stopPropagation(); // prevent selecting the item while deleting
     if (confirm('Apakah Anda yakin ingin menghapus dokumen DPA ini?')) {
       const updatedList = dpaFiles.filter(f => f.id !== idToDelete);
-      await set('dpa_documents', updatedList);
       setDpaFiles(updatedList);
       
       if (selectedFileId === idToDelete) {
         setSelectedFileId(updatedList.length > 0 ? updatedList[0].id : null);
       }
+      
+      await set('dpa_documents', updatedList);
     }
   };
 
@@ -134,7 +147,7 @@ export const DPAView = () => {
           )}
         </div>
         
-        {/* Upload Zone (Big if no files, otherwise hidden behind the "Tambah" button or small) */}
+        {/* Upload Zone */}
         {(dpaFiles.length === 0 || isUploading) && (
           <div 
             className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all relative ${
@@ -211,7 +224,7 @@ export const DPAView = () => {
                 Daftar Dokumen ({dpaFiles.length})
               </h4>
               <div className="space-y-3 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
-                {dpaFiles.sort((a, b) => b.uploadedAt - a.uploadedAt).map(file => (
+                {dpaFiles.slice().sort((a, b) => b.uploadedAt - a.uploadedAt).map(file => (
                   <div 
                     key={file.id}
                     onClick={() => setSelectedFileId(file.id)}
