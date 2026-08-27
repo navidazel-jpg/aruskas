@@ -3,7 +3,8 @@ function doGet(e) {
   const data = {
     subKegiatans: getSheetData(ss, 'SubKegiatan'),
     pdTransactions: getSheetData(ss, 'PDTransactions'),
-    mmTransactions: getSheetData(ss, 'MMTransactions')
+    mmTransactions: getSheetData(ss, 'MMTransactions'),
+    dpaFiles: getSheetData(ss, 'DPAFiles')
   };
   
   // Format MMTransactions json strings back to objects (if applicable) or leave as is.
@@ -50,7 +51,17 @@ function doPost(e) {
       overwriteSheet(ss, 'SubKegiatan', payload.subKegiatans);
       overwriteSheet(ss, 'PDTransactions', pdTrans);
       overwriteSheet(ss, 'MMTransactions', payload.mmTransactions);
+      if (payload.dpaFiles) {
+        overwriteSheet(ss, 'DPAFiles', payload.dpaFiles);
+      }
       result = 'Synced successfully';
+    } else if (action === 'UPLOAD_FILE') {
+      var blob = Utilities.newBlob(Utilities.base64Decode(payload.base64Data), payload.mimeType, payload.filename);
+      var folderIter = DriveApp.getFoldersByName("DPA_Files");
+      var folder = folderIter.hasNext() ? folderIter.next() : DriveApp.createFolder("DPA_Files");
+      var file = folder.createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      result = { url: file.getUrl() };
     }
   } catch (err) {
       return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
