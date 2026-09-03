@@ -1,0 +1,123 @@
+--- src/components/DPAView.tsx
++++ src/components/DPAView.tsx
+@@ -1,7 +1,7 @@
+ import React, { useCallback, useState } from 'react';
+ import { useAppContext } from '../store/AppContext';
+-import { UploadCloud, FileText, Trash2, CheckCircle2, Loader2, X } from 'lucide-react';
++import { UploadCloud, FileText, Trash2, CheckCircle2, Loader2, X, Eye } from 'lucide-react';
+ import { uploadFileToGAS } from '../utils/gasSync';
++import type { DpaFile } from '../store/AppContext';
+ 
+ export const DPAView = () => {
+   const { dpaFiles, addDpaFiles, deleteDpaFile, selectedYear, gasUrl } = useAppContext();
+   const [isDragging, setIsDragging] = useState(false);
+   const [uploadingFiles, setUploadingFiles] = useState<{ name: string; progress: number; error?: string }[]>([]);
++  const [previewFile, setPreviewFile] = useState<DpaFile | null>(null);
+ 
+   const onDragOver = (e: React.DragEvent) => {
+@@ -66,6 +67,17 @@
+     else return (bytes / 1048576).toFixed(1) + ' MB';
+   };
+ 
++  const getPreviewUrl = (url: string) => {
++    if (url.includes('/view')) {
++      return url.replace('/view', '/preview');
++    }
++    if (url.includes('open?id=')) {
++      const id = url.split('id=')[1].split('&')[0];
++      return `https://drive.google.com/file/d/${id}/preview`;
++    }
++    return url;
++  };
++
+   return (
+     <div className="space-y-8">
+       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 lg:p-8">
+@@ -141,31 +153,52 @@
+                       <FileText size={20} />
+                     </div>
+                   </div>
+                   
+                   <h4 className="font-bold text-slate-800 text-sm mb-1 truncate relative z-10 pointer-events-none" title={file.name}>
+                     {file.name}
+                   </h4>
+                   
+                   <div className="flex justify-between items-center text-xs text-slate-500 mt-auto pt-4 border-t border-slate-50 relative z-10 pointer-events-none">
+                     <span>{formatSize(file.size)}</span>
+                     <span>{new Date(file.uploadedAt).toLocaleDateString('id-ID')}</span>
+                   </div>
+                   
+-                  <a 
+-                    href={file.url} 
+-                    target="_blank" 
+-                    rel="noopener noreferrer"
+-                    className="absolute inset-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+-                    aria-label={`Lihat file ${file.name}`}
++                  <button 
++                    onClick={(e) => { e.preventDefault(); setPreviewFile(file); }}
++                    className="absolute inset-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-left"
++                    aria-label={`Lihat file ${file.name}`}
+                   >
+                     <span className="sr-only">Lihat</span>
+-                  </a>
++                  </button>
+                   
+                   <div className="absolute top-3 right-3 z-10">
+                      <button 
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteDpaFile(file.id); }}
+                        className="p-1.5 text-slate-400 opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        title="Hapus"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                   </div>
+                 </div>
+               ))}
+             </div>
+           )}
+         </div>
+       </div>
++
++      {/* PDF Preview Modal */}
++      {previewFile && (
++        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
++          <div className="bg-white rounded-2xl shadow-xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
++            <div className="flex items-center justify-between p-4 border-b border-slate-100">
++              <h3 className="font-bold text-slate-800 flex items-center gap-2">
++                <FileText className="text-blue-500" size={20} />
++                {previewFile.name}
++              </h3>
++              <div className="flex items-center gap-2">
++                <a 
++                  href={previewFile.url}
++                  target="_blank"
++                  rel="noopener noreferrer"
++                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-semibold flex items-center gap-2"
++                >
++                  <Eye size={16} /> Buka di Tab Baru
++                </a>
++                <button 
++                  onClick={() => setPreviewFile(null)}
++                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
++                >
++                  <X size={20} />
++                </button>
++              </div>
++            </div>
++            <div className="flex-1 bg-slate-100 p-2 relative">
++              <div className="absolute inset-0 flex items-center justify-center">
++                 <Loader2 className="animate-spin text-slate-400" size={32} />
++              </div>
++              <iframe
++                src={getPreviewUrl(previewFile.url)}
++                className="w-full h-full rounded-xl border border-slate-200 relative z-10 bg-white"
++                title={previewFile.name}
++                allow="autoplay"
++              ></iframe>
++            </div>
++          </div>
++        </div>
++      )}
+     </div>
+   );
+ };

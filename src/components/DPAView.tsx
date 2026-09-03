@@ -1,12 +1,14 @@
 import React, { useState, useCallback } from 'react';
 import { useAppContext } from '../store/AppContext';
-import { UploadCloud, FileText, Trash2, CheckCircle2, Loader2, X } from 'lucide-react';
+import { UploadCloud, FileText, Trash2, CheckCircle2, Loader2, X, Eye } from 'lucide-react';
 import { uploadFileToGAS } from '../utils/gasSync';
+import type { DpaFile } from '../store/AppContext';
 
 export const DPAView = () => {
   const { dpaFiles, addDpaFiles, deleteDpaFile, selectedYear, gasUrl } = useAppContext();
   const [isDragging, setIsDragging] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<{ name: string; progress: number; error?: string }[]>([]);
+  const [previewFile, setPreviewFile] = useState<DpaFile | null>(null);
 
   const onDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -83,6 +85,17 @@ export const DPAView = () => {
     if (bytes < 1024) return bytes + ' B';
     else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
     else return (bytes / 1048576).toFixed(1) + ' MB';
+  };
+
+  const getPreviewUrl = (url: string) => {
+    if (url.includes('/view')) {
+      return url.replace('/view', '/preview');
+    }
+    if (url.includes('open?id=')) {
+      const id = url.split('id=')[1].split('&')[0];
+      return `https://drive.google.com/file/d/${id}/preview`;
+    }
+    return url;
   };
 
   return (
@@ -175,15 +188,13 @@ export const DPAView = () => {
                     <span>{formatSize(file.size)}</span>
                     <span>{new Date(file.uploadedAt).toLocaleDateString('id-ID')}</span>
                   </div>
-                  <a 
-                    href={file.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="absolute inset-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <button 
+                    onClick={(e) => { e.preventDefault(); setPreviewFile(file); }}
+                    className="absolute inset-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-left w-full h-full"
                     aria-label={`Lihat file ${file.name}`}
                   >
                     <span className="sr-only">Lihat</span>
-                  </a>
+                  </button>
                   <div className="absolute top-3 right-3 z-10">
                      <button 
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteDpaFile(file.id); }}
@@ -199,6 +210,47 @@ export const DPAView = () => {
           )}
         </div>
       </div>
+
+      {/* PDF Preview Modal */}
+      {previewFile && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-white z-10">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2 truncate pr-4">
+                <FileText className="text-blue-500 shrink-0" size={20} />
+                <span className="truncate">{previewFile.name}</span>
+              </h3>
+              <div className="flex items-center gap-2 shrink-0">
+                <a 
+                  href={previewFile.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-semibold flex items-center gap-2"
+                >
+                  <Eye size={16} /> Buka Tab Baru
+                </a>
+                <button 
+                  onClick={() => setPreviewFile(null)}
+                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 bg-slate-100 p-2 relative">
+              <div className="absolute inset-0 flex items-center justify-center">
+                 <Loader2 className="animate-spin text-slate-400" size={32} />
+              </div>
+              <iframe
+                src={getPreviewUrl(previewFile.url)}
+                className="w-full h-full rounded-xl border border-slate-200 relative z-10 bg-white"
+                title={previewFile.name}
+                allow="autoplay"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

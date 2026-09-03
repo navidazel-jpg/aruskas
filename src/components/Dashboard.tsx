@@ -3,6 +3,7 @@ import { useAppContext } from '../store/AppContext';
 import { formatRupiah } from '../utils/formatters';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 import { Plane, Coffee, Briefcase, BarChart2, PieChart as PieChartIcon, Activity } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export const Dashboard = () => {
   const { subKegiatans, pdTransactions, mmTransactions } = useAppContext();
@@ -142,7 +143,12 @@ export const Dashboard = () => {
                     
                     <div className="flex items-center gap-3">
                       <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
-                        <div className={`h-full ${stat.pdPercent > 80 ? 'bg-red-500' : 'bg-blue-500'} transition-all duration-500`} style={{ width: `${Math.min(stat.pdPercent, 100)}%` }}></div>
+                        <motion.div 
+                          className={`h-full ${stat.pdPercent > 80 ? 'bg-red-500' : 'bg-blue-500'}`} 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min(stat.pdPercent, 100)}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                        />
                       </div>
                       <span className="text-[9px] font-bold text-slate-400 w-6 text-right">{stat.pdPercent.toFixed(0)}%</span>
                     </div>
@@ -160,7 +166,12 @@ export const Dashboard = () => {
                     
                     <div className="flex items-center gap-3">
                       <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
-                        <div className={`h-full ${stat.mmPercent > 80 ? 'bg-red-500' : 'bg-emerald-500'} transition-all duration-500`} style={{ width: `${Math.min(stat.mmPercent, 100)}%` }}></div>
+                        <motion.div 
+                          className={`h-full ${stat.mmPercent > 80 ? 'bg-red-500' : 'bg-emerald-500'}`} 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min(stat.mmPercent, 100)}%` }}
+                          transition={{ duration: 1, ease: "easeOut", delay: 0.1 }}
+                        />
                       </div>
                       <span className="text-[9px] font-bold text-slate-400 w-6 text-right">{stat.mmPercent.toFixed(0)}%</span>
                     </div>
