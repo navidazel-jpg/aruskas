@@ -35,7 +35,7 @@ export const DPAView = () => {
     }
   };
 
-  const handleFiles = (files: File[]) => {
+  const handleFiles = async (files: File[]) => {
     const pdfFiles = files.filter(f => f.type === 'application/pdf');
     if (pdfFiles.length !== files.length) {
       alert('Beberapa file diabaikan karena bukan file PDF.');
@@ -43,41 +43,43 @@ export const DPAView = () => {
     
     if (pdfFiles.length === 0) return;
 
-    pdfFiles.forEach(file => {
-      uploadFile(file);
-    });
-  };
+    const uploadedDpas: DpaFile[] = [];
 
-  const uploadFile = async (file: File) => {
-    const fileId = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
-    
-    setUploadingFiles(prev => [...prev, { name: file.name, progress: 50 }]); // Show intermediate progress
+    for (const file of pdfFiles) {
+      const fileId = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
+      
+      setUploadingFiles(prev => [...prev, { name: file.name, progress: 50 }]); // Show intermediate progress
 
-    try {
-      const downloadURL = await uploadFileToGAS(gasUrl, file);
-      
-      setUploadingFiles(prev => 
-        prev.map(f => f.name === file.name ? { ...f, progress: 100 } : f)
-      );
+      try {
+        const downloadURL = await uploadFileToGAS(gasUrl, file);
+        
+        setUploadingFiles(prev => 
+          prev.map(f => f.name === file.name ? { ...f, progress: 100 } : f)
+        );
 
-      addDpaFiles([{
-        id: fileId,
-        name: file.name,
-        url: downloadURL,
-        size: file.size,
-        uploadedAt: new Date().toISOString(),
-        tahun: selectedYear
-      }]);
-      
-      setTimeout(() => {
-        setUploadingFiles(prev => prev.filter(f => f.name !== file.name));
-      }, 1000);
-      
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      setUploadingFiles(prev => 
-        prev.map(f => f.name === file.name ? { ...f, error: error.message || 'Gagal mengunggah' } : f)
-      );
+        uploadedDpas.push({
+          id: fileId,
+          name: file.name,
+          url: downloadURL,
+          size: file.size,
+          uploadedAt: new Date().toISOString(),
+          tahun: selectedYear
+        });
+        
+        setTimeout(() => {
+          setUploadingFiles(prev => prev.filter(f => f.name !== file.name));
+        }, 1000);
+        
+      } catch (error: any) {
+        console.error('Upload error:', error);
+        setUploadingFiles(prev => 
+          prev.map(f => f.name === file.name ? { ...f, error: error.message || 'Gagal mengunggah' } : f)
+        );
+      }
+    }
+
+    if (uploadedDpas.length > 0) {
+      addDpaFiles(uploadedDpas);
     }
   };
 
